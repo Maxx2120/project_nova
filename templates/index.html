@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h1>Create. Imagine. Innovate.</h1>
+    <p>Unlock the power of AI with our all-in-one platform. Chat, generate images, and edit videos seamlessly.</p>
+    <div class="cta-buttons">
+        <a href="/signup" class="btn btn-primary btn-large">Get Started Free</a>
+        <a href="#features" class="btn btn-secondary btn-large">Learn More</a>
+    </div>
+</section>
+
+<section id="features" class="grid" style="padding: 4rem 1rem;">
+    <div class="card">
+        <div class="card-icon"><i data-lucide="message-square"></i></div>
+        <h3>Smart Chatbot</h3>
+        <p>Engage with our advanced AI assistant for coding help, content writing, and more.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon"><i data-lucide="image"></i></div>
+        <h3>Image Generation</h3>
+        <p>Turn your text descriptions into stunning visual art in seconnds.</p>
+    </div>
+    <div class="card">
+        <div class="card-icon"><i data-lucide="video"></i></div>
+        <h3>Video Editing</h3>
+        <p>Apply cinematic effects to your videos using simple text commands.</p>
+    </div>
+</section>
+{% endblock %}

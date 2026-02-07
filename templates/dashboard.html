@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Your Workspace</h1>
+<div class="grid" style="margin-top: 2rem;">
+    <a href="/chat" class="card">
+        <div class="card-icon"><i data-lucide="message-square"></i></div>
+        <h3>AI Chat</h3>
+        <p>Start a new conversation or continue where you left off.</p>
+    </a>
+    <a href="/image-generator" class="card">
+        <div class="card-icon"><i data-lucide="image"></i></div>
+        <h3>Image Studio</h3>
+        <p>Create unique images from your imagination.</p>
+    </a>
+    <a href="/video-editor" class="card">
+        <div class="card-icon"><i data-lucide="video"></i></div>
+        <h3>Video Editor</h3>
+        <p>Enhance your videos with AI-powered filters.</p>
+    </a>
+</div>
+{% endblock %}

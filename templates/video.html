@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container text-center">
+    <h2>AI Video Editor</h2>
+    <p>Upload a video and apply effects using text commands.</p>
+
+    <div class="card" style="max-width: 600px; margin: 2rem auto;">
+        <input type="file" id="video-upload" accept="video/*" class="form-control" style="margin-bottom: 1rem;">
+        <input type="text" id="video-prompt" placeholder="E.g., Convert to black and white, cinema mode"
+            class="form-control" style="padding: 1rem; width: 100%; box-sizing: border-box;">
+        <button onclick="processVideo()" class="btn btn-primary" style="margin-top: 1rem;">Process Video</button>
+    </div>
+
+    <div id="video-result" style="display: none; margin-top: 2rem;">
+        <h3>Processed Video</h3>
+        <video controls width="100%" id="output-video"></video>
+        <a id="download-link" class="btn btn-secondary" download>Download</a>
+    </div>
+
+    <div id="processing-msg" style="display: none; margin-top: 1rem;">Processing... this may take a moment.</div>
+</div>
+
+<script>
+    async function processVideo() {
+        const fileInput = document.getElementById('video-upload');
+        const promptInput = document.getElementById('video-prompt');
+
+        if (!fileInput.files.length || !promptInput.value) {
+            alert('Please select a video and enter a prompt.');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        document.getElementById('processing-msg').style.display = 'block';
+
+        try {
+            // Upload
+            const uploadRes = await fetch('/api/video/upload', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') },
+                body: formData
+            });
+
+            if (!uploadRes.ok) throw new Error('Upload failed');
+            const task = await uploadRes.json();
+
+            // Process
+            const processRes = await fetch(`/api/video/process/${task.id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                },
+                body: JSON.stringify({ prompt: promptInput.value })
+            });
+
+            if (!processRes.ok) throw new Error('Processing failed');
+            const result = await processRes.json();
+
+            document.getElementById('video-result').style.display = 'block';
+            const videoElem = document.getElementById('output-video');
+            videoElem.src = result.output_url;
+            videoElem.load(); // Reload video source
+
+            const dlLink = document.getElementById('download-link');
+            dlLink.href = result.output_url;
+
+        } catch (error) {
+            console.error(error);
+            alert('Error: ' + error.message);
+        } finally {
+            document.getElementById('processing-msg').style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

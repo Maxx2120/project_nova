@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h2>AI Image Generator</h2>
+    <p>Describe your imagination and we'll create it.</p>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="input-group" style="display: flex; gap: 1rem; max-width: 600px; margin: 0 auto;">
+            <input type="text" id="image-prompt" class="form-control"
+                placeholder="A futuristic city with flying cars..."
+                style="flex: 1; padding: 0.75rem; border-radius: var(--border-radius); border: 1px solid #ccc;">
+            <button class="btn btn-primary" onclick="generateImage()">Generate</button>
+        </div>
+    </div>
+</div>
+
+<div id="loader" class="loader" style="margin: 2rem auto;"></div>
+<div id="error-msg" style="color: red; text-align: center; display: none;"></div>
+
+<div class="gallery" id="image-gallery">
+    <!-- Generated images go here -->
+</div>
+
+<script>
+    async function generateImage() {
+        const prompt = document.getElementById('image-prompt').value;
+        if (!prompt) return;
+
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('error-msg').style.display = 'none';
+
+        try {
+            const response = await fetch('/api/image/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                },
+                body: JSON.stringify({ prompt: prompt })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'gallery-item';
+                imgContainer.innerHTML = `<img src="${data.image_url}" alt="${data.prompt}"><p>${data.prompt}</p>`;
+                document.getElementById('image-gallery').prepend(imgContainer);
+            } else {
+                document.getElementById('error-msg').textContent = data.detail || 'Generation failed';
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        } catch (error) {
+            document.getElementById('error-msg').textContent = 'Server error';
+            document.getElementById('error-msg').style.display = 'block';
+        } finally {
+            document.getElementById('loader').style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

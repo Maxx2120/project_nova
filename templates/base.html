@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Final Project{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/static/js/main.js" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <i data-lucide="zap"></i>
+            <span>NovaAI</span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            {% if request.path == '/dashboard' or request.path == '/chat' or request.path == '/image-generator' or request.path == '/video-editor' %}
+                <a href="/dashboard">Dashboard</a>
+                <a href="#" onclick="logout()">Logout</a>
+            {% else %}
+                <a href="/login" class="btn btn-primary">Login</a>
+                <a href="/signup" class="btn btn-secondary">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2026 Final Year Project - AI Web App</p>
+    </footer>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

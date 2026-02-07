@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+sqlalchemy
+python-jose[cryptography]
+passlib[bcrypt]
+email-validator
+requests
+httpx
+python-multipart
+# For local AI (Video/Image) - specific setup might be needed
+# diffusers
+# transformers
+# torch
+# accelerate
+# Note: Install these separately or use a requirements-ai.txt for heavy dependencies

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="chat-container">
+    <div id="chat-history" class="chat-history">
+        <!-- Messages will appear here -->
+    </div>
+    <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+        <button id="send-btn" class="btn btn-primary"><i data-lucide="send"></i></button>
+    </div>
+</div>
+
+<script>
+    const chatHistory = document.getElementById('chat-history');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    async function loadHistory() {
+        const response = await apiCall('/chat/history');
+        if (response && response.ok) {
+            const messages = await response.json();
+            chatHistory.innerHTML = '';
+            messages.forEach(msg => appendMessage(msg.role, msg.message));
+            scrollToBottom();
+        }
+    }
+
+    function appendMessage(role, text) {
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.textContent = text;
+        chatHistory.appendChild(div);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        appendMessage('user', text);
+        messageInput.value = '';
+
+        // Show typing indicator via placeholder msg
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'message assistant';
+        loadingDiv.textContent = 'Thinking...';
+        loadingDiv.id = 'loading-msg';
+        chatHistory.appendChild(loadingDiv);
+        scrollToBottom();
+
+        try {
+            const response = await apiCall('/chat', 'POST', { message: text });
+            const data = await response.json();
+
+            // Remove loading
+            document.getElementById('loading-msg').remove();
+
+            if (response.ok) {
+                appendMessage('assistant', data.message);
+            } else {
+                appendMessage('assistant', 'Error: ' + (data.detail || 'Could not reach AI'));
+            }
+        } catch (e) {
+            document.getElementById('loading-msg').remove();
+            appendMessage('assistant', 'Error connecting to server.');
+        }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    loadHistory();
+</script>
+{% endblock %}
