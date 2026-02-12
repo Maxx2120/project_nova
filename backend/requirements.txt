@@ -8,8 +8,11 @@ requests
 httpx
 python-multipart
 # For local AI (Video/Image) - specific setup might be needed
-# diffusers
-# transformers
-# torch
-# accelerate
+diffusers
+transformers
+torch
+accelerate
+ollama
+Pillow
 # Note: Install these separately or use a requirements-ai.txt for heavy dependencies
+jinja2

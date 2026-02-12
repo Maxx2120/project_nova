@@ -1,71 +1,69 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from .. import schemas, models, database, auth
-try:
-    import torch
-except ImportError:
-    torch = None
+from .. import schemas, models, database, auth, model_manager
 from pathlib import Path
+import logging
+import torch
 
+logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Image Generation"])
 
-# Placeholder for the pipeline
-pipe = None
-MODEL_ID = "runwayml/stable-diffusion-v1-5" # Or a local path
-
-def load_model():
-    global pipe
-    try:
-        from diffusers import StableDiffusionPipeline
-        # Attempt to load model - this might be slow or fail on low RAM
-        # Using float32 for CPU compatibility if GPU not available
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        dtype = torch.float16 if device == "cuda" else torch.float32
-        
-        # NOTE: This requires the model to be downloaded locally or cached
-        pipe = StableDiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=dtype)
-        pipe.to(device)
-        if device == "cpu":
-            pipe.enable_attention_slicing() # optimization for low RAM
-    except Exception as e:
-        print(f"Warning: Could not load Stable Diffusion model: {e}")
-
-# Trigger model load on startup or first request (lazy load)
-# load_model() 
-
-@router.post("/image/generate", response_model=schemas.ImageResponse)
+@router.post("/generate", response_model=schemas.ImageResponse)
 def generate_image(request: schemas.ImageRequest,
                    current_user: models.User = Depends(auth.get_current_user),
                    db: Session = Depends(database.get_db)):
     
-    global pipe
-    if pipe is None:
-        try:
-            load_model()
-        except:
-             pass
-
-    if pipe is None:
-        # Fallback for testing/if model fails to load
-        raise HTTPException(status_code=500, detail="Image model not loaded. Please check server logs.")
+    output_dir = Path("static/generated_images")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{current_user.id}_{request.prompt[:10].replace(' ', '_')}.png"
+    filepath = output_dir / filename
 
     try:
-        image = pipe(request.prompt).images[0]
+        # Get the pipeline
+        pipe = model_manager.get_stable_diffusion_pipeline()
         
-        # Save image
-        filename = f"{current_user.id}_{request.prompt[:10].replace(' ', '_')}.png"
-        output_dir = Path("static/generated_images")
-        output_dir.mkdir(parents=True, exist_ok=True)
-        filepath = output_dir / filename
+        if pipe is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="Stable Diffusion model not available. Run setup_models.py first."
+            )
+        
+        # Generate image with optimized steps for LCM
+        logger.info(f"Generating image for prompt: {request.prompt}")
+        if pipe.device.type == 'cpu':
+            # LCM uses much fewer steps for fast inference (4-8 steps)
+            steps = 4  # LCM can generate good results in just 4 steps
+        else:
+            steps = 6  # GPU can use slightly more for better quality
+            
+        image = pipe(request.prompt, num_inference_steps=steps).images[0]
         image.save(filepath)
+        logger.info(f"Image saved to {filepath}")
         
-        # Save to DB
-        db_image = models.ImagePrompt(user_id=current_user.id, prompt=request.prompt, image_path=str(filepath))
-        db.add(db_image)
-        db.commit()
-        db.refresh(db_image)
-        
-        return schemas.ImageResponse(id=db_image.id, prompt=db_image.prompt, image_url=f"/static/generated_images/{filename}", created_at=db_image.created_at)
-        
+    except torch.cuda.OutOfMemoryError:
+        logger.error("GPU out of memory")
+        raise HTTPException(
+            status_code=503,
+            detail="GPU out of memory. Please try again or use CPU mode."
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Image generation error: {e}")
+        # Fallback: Create a placeholder image
+        try:
+            from PIL import Image, ImageDraw
+            img = Image.new('RGB', (512, 512), color=(73, 109, 137))
+            d = ImageDraw.Draw(img)
+            text = f"Generation Error\n{str(e)[:30]}\nPrompt: {request.prompt[:20]}"
+            d.text((10, 10), text, fill=(255, 255, 0))
+            img.save(filepath)
+            logger.info(f"Placeholder image created for error handling")
+        except:
+            raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")
+        
+    # Save to DB
+    db_image = models.ImagePrompt(user_id=current_user.id, prompt=request.prompt, image_path=str(filepath))
+    db.add(db_image)
+    db.commit()
+    db.refresh(db_image)
+    
+    return schemas.ImageResponse(id=db_image.id, prompt=db_image.prompt, image_url=f"/static/generated_images/{filename}", created_at=db_image.created_at)

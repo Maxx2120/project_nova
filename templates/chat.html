@@ -15,6 +15,33 @@
     const chatHistory = document.getElementById('chat-history');
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
+    const modelSelect = document.getElementById('model-select');
+
+    async function loadModels() {
+        try {
+            const response = await apiCall('/chat/models');
+            if (response && response.ok) {
+                const data = await response.json();
+                modelSelect.innerHTML = '';
+                if (data.models && data.models.length > 0) {
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        if (model.includes('tinyllama')) option.selected = true;
+                        modelSelect.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = "tinyllama";
+                    option.textContent = "TinyLlama (Default)";
+                    modelSelect.appendChild(option);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to load models", e);
+        }
+    }
 
     async function loadHistory() {
         const response = await apiCall('/chat/history');
@@ -40,6 +67,7 @@
 
     async function sendMessage() {
         const text = messageInput.value.trim();
+        const model = modelSelect.value;
         if (!text) return;
 
         appendMessage('user', text);
@@ -54,7 +82,7 @@
         scrollToBottom();
 
         try {
-            const response = await apiCall('/chat', 'POST', { message: text });
+            const response = await apiCall('/chat', 'POST', { message: text, model: model });
             const data = await response.json();
 
             // Remove loading
@@ -76,6 +104,7 @@
         if (e.key === 'Enter') sendMessage();
     });
 
+    loadModels();
     loadHistory();
 </script>
 {% endblock %}

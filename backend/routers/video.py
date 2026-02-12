@@ -7,7 +7,7 @@ import os
 
 router = APIRouter(tags=["Video Processing"])
 
-@router.post("/video/upload", response_model=schemas.VideoResponse)
+@router.post("/upload", response_model=schemas.VideoResponse)
 async def upload_video(file: UploadFile = File(...),
                        current_user: models.User = Depends(auth.get_current_user),
                        db: Session = Depends(database.get_db)):
@@ -30,7 +30,7 @@ async def upload_video(file: UploadFile = File(...),
     
     return schemas.VideoResponse(id=task.id, user_id=task.user_id, prompt=task.prompt, status=task.status, output_url=None, created_at=task.created_at)
 
-@router.post("/video/process/{task_id}", response_model=schemas.VideoResponse)
+@router.post("/process/{task_id}", response_model=schemas.VideoResponse)
 def process_video(task_id: int, request: schemas.VideoRequest,
                   current_user: models.User = Depends(auth.get_current_user),
                   db: Session = Depends(database.get_db)):

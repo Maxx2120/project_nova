@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000/api";
+const API_URL = "/api";
 
 function getToken() {
     return localStorage.getItem("access_token");
@@ -53,11 +53,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const path = window.location.pathname;
     const token = getToken();
     const protectedRoutes = ["/dashboard", "/chat", "/image-generator", "/video-editor"];
-    
+
     if (protectedRoutes.includes(path) && !token) {
         window.location.href = "/login";
     }
-    
+
     if ((path === "/login" || path === "/signup") && token) {
         window.location.href = "/dashboard";
     }

@@ -11,14 +11,18 @@ SECRET_KEY = "PLEASE_CHANGE_THIS_IN_PRODUCTION_TO_A_VERY_SECURE_SECRET_KEY"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    try:
+        return pwd_context.hash(password)
+    except ValueError as e:
+        print(f"Error hashing password: {e}. Password type: {type(password)}, Length: {len(password) if hasattr(password, '__len__') else 'N/A'}")
+        raise e
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
