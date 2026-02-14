@@ -49,7 +49,7 @@ def load_gemini_model():
     if _gemini_model is not None:
         return _gemini_model
     
-    import google.genai as genai
+    import google.generativeai as genai
     
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -60,12 +60,12 @@ def load_gemini_model():
     
     genai.configure(api_key=api_key)
     
-    # Initialize the model
-    _gemini_model = genai.GenerativeModel('gemini-pro')
+    # Initialize the model (standard SDK)
+    # Using gemini-2.5-flash as default (fast and capable)
+    _gemini_model = genai.GenerativeModel('gemini-2.5-flash')
     
     logger.info(f"✓ Gemini API configured successfully")
-    logger.info(f"  - Model: gemini-pro")
-    logger.info(f"  - Type: Text generation (chat)")
+    logger.info(f"  - Model: gemini-2.5-flash")
     
     return _gemini_model
 

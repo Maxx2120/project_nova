@@ -2,17 +2,19 @@ from fastapi import FastAPI, Depends, WebSocket, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
-from backend.database import engine, Base
-from backend.routers import auth, chat, image, video
-from backend import model_manager
 import logging
 import os
 from pathlib import Path
 
-# Load environment variables from .env file
+# Load environment variables from .env file FIRST
 from dotenv import load_dotenv
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(env_path)
+
+# Now import backend modules that might rely on env vars
+from backend.database import engine, Base
+from backend.routers import auth, chat, image, video
+from backend import model_manager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

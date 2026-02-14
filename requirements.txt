@@ -8,7 +8,7 @@ requests
 httpx
 python-multipart
 # Gemini API (newer package - google-genai)
-google-genai>=0.1.0
+google-generativeai>=0.3.0
 # Image Generation (Stable Diffusion with LCM)
 diffusers>=0.25.0
 transformers>=4.35.0

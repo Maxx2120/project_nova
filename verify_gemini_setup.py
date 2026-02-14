@@ -9,6 +9,9 @@ import sys
 from pathlib import Path
 
 def check_gemin_setup():
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     """Check Gemini API setup"""
     print("\n" + "="*60)
     print("[*] GEMINI API SETUP VERIFICATION")

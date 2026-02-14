@@ -23,14 +23,28 @@ async def chat(request: schemas.ChatRequest,
     
     # Call Gemini API
     try:
-        if not GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY not configured")
+        # Default model
+        model_name = "gemini-2.5-flash"
         
-        import google.genai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
+        # Check if user requested a specific valid model
+        if request.model and request.model.lower() != "string" and "llama" not in request.model.lower():
+             model_name = request.model
+             
+        # Map legacy/unavailable models to valid ones for this key
+        if model_name in ["gemini-pro", "gemini-1.5-flash", "mistral"]:
+            model_name = "gemini-2.5-flash"
+        
+        logger.info(f"Using model: {model_name}")
+        
+        # We need to instantiate the specific model requested
+        # The global one in model_manager might be different
+        import google.generativeai as genai
+        # Reuse configuration from manager if possible, but safe to re-configure or just use implicit
+        model = genai.GenerativeModel(model_name)
         
         logger.info(f"Generating response for prompt: {request.message}")
+        
+        # Standard google-generativeai call
         response = model.generate_content(request.message)
         ai_text = response.text
         
@@ -63,7 +77,16 @@ def get_chat_history(current_user: models.User = Depends(auth.get_current_user),
 async def get_models():
     """Return available chat models"""
     if GEMINI_API_KEY:
-        return {"models": ["gemini-pro"], "source": "Google Gemini"}
+        # Based on available models for this key
+        return {
+            "models": [
+                "gemini-2.5-flash", 
+                "gemini-2.5-pro", 
+                "gemini-2.0-flash", 
+                "gemini-flash-latest"
+            ], 
+            "source": "Google Gemini"
+        }
     else:
         return {
             "models": [FALLBACK_MODEL],

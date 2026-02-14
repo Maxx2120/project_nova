@@ -5,7 +5,12 @@ import os
 BASE_URL = "http://127.0.0.1:8000"
 
 async def test_endpoints():
-    print(f"Testing endpoints at {BASE_URL}...")
+    with open("test_run.log", "w", encoding="utf-8") as log:
+        def log_print(msg):
+            print(msg)
+            log.write(msg + "\n")
+            
+        log_print(f"Testing endpoints at {BASE_URL}...")
     headers = {}
     
     async with httpx.AsyncClient() as client:
@@ -13,17 +18,17 @@ async def test_endpoints():
         try:
             response = await client.get(f"{BASE_URL}/")
             if response.status_code == 200:
-                print("✅ Root endpoint: OK")
+                with open("test_run.log", "a", encoding="utf-8") as log: log.write("Root endpoint: OK\n")
             else:
-                print(f"❌ Root endpoint: Failed {response.status_code}")
+                with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Root endpoint: Failed {response.status_code}\n")
         except Exception as e:
-            print(f"❌ Root endpoint: Connection Error {e}")
+            with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Root endpoint: Connection Error {e}\n")
             return
 
         # 2. Register/Login
         email = "tester_final@example.com"
         password = "password123"
-        print("\nTesting Auth...")
+        with open("test_run.log", "a", encoding="utf-8") as log: log.write("\nTesting Auth...\n")
         
         # Register
         await client.post(f"{BASE_URL}/api/auth/register", json={
@@ -38,42 +43,42 @@ async def test_endpoints():
         if response.status_code == 200:
             token = response.json()["access_token"]
             headers = {"Authorization": f"Bearer {token}"}
-            print(f"✅ Auth: Login Success")
+            with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Auth: Login Success\n")
         else:
-            print(f"❌ Auth: Login Failed {response.text}")
+            with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Auth: Login Failed {response.text}\n")
             return
 
         # 3. Test Chat
-        print("\nTesting Chat...")
+        with open("test_run.log", "a", encoding="utf-8") as log: log.write("\nTesting Chat...\n")
         try:
             # We use a short timeout because we just want to know if it connects to Ollama/Endpoint
             response = await client.post(f"{BASE_URL}/api/chat", json={
-                "message": "Hi", "model": "mistral"
-            }, headers=headers, timeout=10.0)
+                "message": "Hi", "model": "gemini-2.5-flash"
+            }, headers=headers, timeout=20.0)
             
             if response.status_code == 200:
-                print(f"✅ Chat: Success (Response: {response.json().get('message')})")
+                with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Chat: Success (Response: {response.json().get('message')})\n")
             else:
-                print(f"⚠️ Chat: Error {response.status_code} - {response.text}")
+                with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Chat: Error {response.status_code} - {response.text}\n")
         except Exception as e:
-             print(f"⚠️ Chat: Timeout or Error (common if Ollama is slow): {e}")
+             with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Chat: Timeout or Error (common if Ollama is slow): {e}\n")
 
         # 4. Test Image Generation (Fallback Check)
-        print("\nTesting Image Gen...")
+        with open("test_run.log", "a", encoding="utf-8") as log: log.write("\nTesting Image Gen...\n")
         try:
             response = await client.post(f"{BASE_URL}/api/image/generate", json={
                 "prompt": "Test Prompt"
-            }, headers=headers, timeout=10.0)
+            }, headers=headers, timeout=20.0)
             
             if response.status_code == 200:
-                 print("✅ Image Gen: Success (Fallback/Real)")
+                 with open("test_run.log", "a", encoding="utf-8") as log: log.write("Image Gen: Success (Fallback/Real)\n")
             else:
-                 print(f"❌ Image Gen: Failed {response.status_code} - {response.text}")
+                 with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Image Gen: Failed {response.status_code} - {response.text}\n")
         except Exception as e:
-             print(f"❌ Image Gen: Error {e}")
+             with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Image Gen: Error {e}\n")
 
         # 5. Test Video Upload
-        print("\nTesting Video Upload...")
+        with open("test_run.log", "a", encoding="utf-8") as log: log.write("\nTesting Video Upload...\n")
         try:
             # Create dummy file
             with open("test_vid.txt", "wb") as f:
@@ -94,21 +99,21 @@ async def test_endpoints():
             
             if response.status_code == 200:
                 task_id = response.json()['id']
-                print(f"✅ Video Upload: Success (Task ID: {task_id})")
+                with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Video Upload: Success (Task ID: {task_id})\n")
                 
                 # Test Process (Expected to be 500 because it's a dummy file, but validates endpoint hit)
-                print("Testing Video Process Endpoint Reachability...")
+                with open("test_run.log", "a", encoding="utf-8") as log: log.write("Testing Video Process Endpoint Reachability...\n")
                 resp_proc = await client.post(f"{BASE_URL}/api/video/process/{task_id}", json={"prompt": "bw"}, headers={'Authorization': token})
                 
                 if resp_proc.status_code in [200, 500]: 
-                     print(f"✅ Video Process: Endpoint Reachable (Status: {resp_proc.status_code})")
+                     with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Video Process: Endpoint Reachable (Status: {resp_proc.status_code})\n")
                 else:
-                     print(f"❌ Video Process: Unreachable {resp_proc.status_code}")
+                     with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Video Process: Unreachable {resp_proc.status_code}\n")
             else:
-                print(f"❌ Video Upload: Failed {response.status_code} - {response.text}")
+                with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Video Upload: Failed {response.status_code} - {response.text}\n")
                 
         except Exception as e:
-            print(f"❌ Video: Error {e}")
+            with open("test_run.log", "a", encoding="utf-8") as log: log.write(f"Video: Error {e}\n")
         finally:
             if os.path.exists("test_vid.txt"):
                  try:
